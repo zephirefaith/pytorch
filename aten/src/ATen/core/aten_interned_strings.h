@@ -489,6 +489,7 @@ _(aten, miopen_rnn) \
 _(aten, miopen_rnn_backward) \
 _(aten, mish) \
 _(aten, mkldnn_convolution) \
+_(aten, mkldnn_convolution_transpose) \
 _(aten, mm) \
 _(aten, mode) \
 _(aten, mse_loss) \
