@@ -10627,7 +10627,7 @@ class TestNN(NNTestCase):
         with warnings.catch_warnings(record=True) as w:
             y = F.channel_shuffle(x.contiguous(memory_format=torch.channels_last), 2)
             self.assertEqual(len(w), 0)
-        y = y.contiguous(memory_format=torch.contiguous_format)
+        self.assertTrue(y.is_contiguous(memory_format=torch.channels_last))
         self.assertEqual(y, y_ref)
 
         #  5D tensor
@@ -10662,7 +10662,7 @@ class TestNN(NNTestCase):
         with warnings.catch_warnings(record=True) as w:
             y = F.channel_shuffle(x.contiguous(memory_format=torch.channels_last_3d), 2)
             self.assertEqual(len(w), 0)
-        y = y.contiguous(memory_format=torch.contiguous_format)
+        self.assertTrue(y.is_contiguous(memory_format=torch.channels_last_3d))
         self.assertEqual(y, y_ref)
 
     def test_upsamplingLinear1d(self):
