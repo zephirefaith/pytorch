@@ -6039,7 +6039,14 @@ for shape in [(1,), ()]:
                 if y.is_sparse:
                     y = y.to_dense()
                 y.sum().backward()
-                self.assertEqual(2 * a, a.grad)
+
+                actual = 2 * a
+                expected = a.grad
+                if a.is_sparse:
+                    actual = actual.coalesce()
+                    expected = expected.coalesce()
+
+                self.assertEqual(actual, expected)
 
         for cuda in [False] + ([True] if torch.cuda.is_available() else []):
             for pin_memory in [True, False]:
