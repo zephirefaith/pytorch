@@ -42,6 +42,7 @@ from .utils import (
     create_qparam_nodes,
     get_qconv_prepack_op,
     get_qconv_op,
+    create_node_from_old_node_preserve_meta,
 )
 
 from ..qconfig import QConfigAny
@@ -937,10 +938,10 @@ class LinearReLUQuantizeHandler(QuantizeHandler):
                 else:
                     parent_name, name = _parent_name(self.linear_node.target)
                     setattr(modules[parent_name], name, ref_linear)
-                op_out = quantized_graph.create_node(
-                    'call_module',
-                    self.linear_node.target,
-                    args, {})
+                op_out = create_node_from_old_node_preserve_meta(
+                    quantized_graph,
+                    ('call_module', self.linear_node.target, args, {}),
+                    self.linear_node)
                 if output_activation_post_process:
                     op_out = quantize_node(
                         op_out,
