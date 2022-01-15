@@ -1199,6 +1199,7 @@ def insert_observers_for_model(
 
 def run_prepare_fx_on_standalone_modules(
     model: torch.nn.Module,
+    is_qat: bool,
     modules: Dict[str, torch.nn.Module],
     matches: Any,
     prepare_custom_config_dict: Dict[str, Any],
@@ -1229,6 +1230,7 @@ def run_prepare_fx_on_standalone_modules(
             prepare(
                 standalone_module,
                 sm_qconfig_dict,
+                is_qat,
                 sm_prepare_config_dict,
                 backend_config_dict=sm_backend_config_dict)
         preserved_attributes = \
@@ -1265,12 +1267,12 @@ def save_state(
 def prepare(
         model: GraphModule,
         qconfig_dict: Any,
+        is_qat: bool,
         node_name_to_scope: Dict[str, Tuple[str, type]],
         prepare_custom_config_dict: Optional[Dict[str, Any]] = None,
         equalization_qconfig_dict: Optional[Dict[str, Any]] = None,
         backend_config_dict: Optional[Dict[str, Any]] = None,
-        is_standalone_module: bool = False,
-        is_qat: bool = False) -> ObservedGraphModule:
+        is_standalone_module: bool = False) -> ObservedGraphModule:
     """ standalone_module means it a submodule that is not inlined in
     parent module, and will be quantized separately as one unit.
 
@@ -1382,7 +1384,7 @@ def prepare(
         "output_quantized_idxs", [])
 
     run_prepare_fx_on_standalone_modules(
-        model, modules, matches, prepare_custom_config_dict, backend_config_dict)
+        model, is_qat, modules, matches, prepare_custom_config_dict, backend_config_dict)
 
     # record names for the set of observed node, so that in convert step
     # we know whether we need to convert a floating point module to reference
