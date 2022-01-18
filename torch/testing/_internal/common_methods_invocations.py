@@ -23,7 +23,7 @@ from torch.testing._internal.common_dtype import (
     all_types, double_types, empty_types
 )
 from torch.testing._internal.common_device_type import \
-    (onlyCUDA, onlyNativeDeviceTypes, disablecuDNN, skipCUDAIfNoMagma, skipCUDAIfNoMagmaAndNoCusolver,
+    (onlyCPU, onlyCUDA, onlyNativeDeviceTypes, disablecuDNN, skipCUDAIfNoMagma, skipCUDAIfNoMagmaAndNoCusolver,
      skipCUDAIfNoCusolver, skipCPUIfNoLapack, skipCPUIfNoFFT, skipCUDAIfRocm, precisionOverride,
      toleranceOverride, tol, has_cusolver)
 from torch.testing._internal.common_cuda import CUDA11OrLater, SM53OrLater, SM60OrLater
@@ -6694,6 +6694,28 @@ def sample_inputs_scatter_add(op_info, device, dtype, requires_grad):
 
     return [SampleInput(tensor, args=args) for tensor, args in test_cases]
 
+def sample_inputs_scatter_reduce(op_info, device, dtype, requires_grad):
+    def _tensor(shape, dtype=dtype, low=None, high=None):
+        return make_tensor(shape, device, dtype, low=low, high=high, requires_grad=requires_grad)
+
+    def _index(shape, max_indices):
+        return torch.from_numpy(np.random.choice(max_indices, size=shape))
+
+    reduces = ["sum", "prod", "mean", "amax", "amin"]
+    shapes_and_dims = [((M,), 1), ((M, S), 2), ((M, M, S), 3), ((1, M, M, S), 4)]
+
+    sample_inputs = []
+
+    for ((shape, dim), reduce) in itertools.product(shapes_and_dims, reduces):
+        for d in range(dim):
+            sample_inputs.append(
+                SampleInput(
+                    _tensor(shape),
+                    args=(d, _index(shape, shape[d]), reduce),
+                )
+            )
+
+    return sample_inputs
 
 def sample_inputs_ravel(op_info, device, dtype, requires_grad, **kwargs):
     samples = (SampleInput(make_tensor((S, S, S), device, dtype,
@@ -15238,7 +15260,14 @@ op_db: List[OpInfo] = [
         supports_out=False,
         supports_forward_ad=True,
         supports_fwgrad_bwgrad=True,
-    )
+    ),
+    OpInfo(
+        'scatter_reduce',
+        dtypes=all_types_and(torch.float16, torch.bfloat16),
+        sample_inputs_func=sample_inputs_scatter_reduce,
+        supports_out=True,
+        decorators=(onlyCPU,),
+    ),
 ]
 
 # Common operator groupings
