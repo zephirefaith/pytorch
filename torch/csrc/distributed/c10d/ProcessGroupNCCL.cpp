@@ -2140,10 +2140,74 @@ void ProcessGroupNCCL::groupEnd() {
 }
 
 c10::intrusive_ptr<ProcessGroup::Work> ProcessGroupNCCL::gather(
-    std::vector<std::vector<at::Tensor>>& /* unused */,
-    std::vector<at::Tensor>& /* unused */,
-    const GatherOptions& /* unused */) {
-  TORCH_CHECK(false, "ProcessGroupNCCL does not support gather");
+    std::vector<std::vector<at::Tensor>>& outputTensors,
+    std::vector<at::Tensor>& inputTensors,
+    const GatherOptions& opts) {
+  static auto invalidArgument = [](const std::string& msg) {
+    TORCH_CHECK(false, "ProcessGroupNCCL::gather: " + msg);
+  };
+
+  assertRootRank(invalidArgument, opts.rootRank, size_);
+  check_gpu_tensors(inputTensors);
+  assertSingleElementInput(invalidArgument, inputTensors);
+
+  // @lint-ignore CLANGTIDY
+  auto tensor = inputTensors.back();
+  RECORD_PARAM_COMMS(
+      rank_,                    // rank
+      "gather",                 // colName
+      tensor.numel(),           // inSize
+      tensor.numel() *
+        this->getSize(),        // outSize
+      tensor.scalar_type(),     // dType
+      std::vector<int64_t>(),   // inSplitSizes
+      std::vector<int64_t>());  // outSplitSize
+
+  if (getRank() == opts.rootRank) {
+    if (outputTensors.size() != 1) {
+      std::stringstream ss;
+      ss << "requires a single-element output list containing a list with "
+         << getSize() << " tensors.";
+      invalidArgument(ss.str());
+    } else if (outputTensors[0].size() != static_cast<size_t>(getSize())) {
+      std::stringstream ss;
+      ss << "Incorrect output list size " << outputTensors[0].size()
+         << ". Output list size should be " << getSize()
+         << ", same as size of the process group.";
+      invalidArgument(ss.str());
+    }
+
+    const auto& options = inputTensors[0].options();
+    const auto& sizes = inputTensors[0].sizes();
+    assertTypeAndSizesMatch(invalidArgument, outputTensors[0], options, sizes);
+  } else {
+    // if not in the root rank, initialize outputFlattened as empty place holder
+    if (outputTensors.size() != 0) {
+      invalidArgument("requires empty output on non-root");
+    }
+    outputTensors.emplace_back();
+
+  }
+
+  return collective(
+      inputTensors,
+      outputTensors[0],
+      [&](at::Tensor& /* unused */,
+          at::Tensor& /* unused */,
+          ncclComm_t comm,
+          at::cuda::CUDAStream& stream) {
+        const auto root = opts.rootRank;
+        if (getRank() == root) {
+          for(auto output: outputTensors[0]) {
+            c10::cuda::CUDACachingAllocator::recordStream(
+                output.storage().data_ptr(), stream);
+          }
+        }
+        torch::cuda::nccl::gather(inputTensors[0], outputTensors[0], comm, stream, root);
+        return ncclSuccess;
+      },
+      OpType::GATHER,
+      "nccl:gather");
 }
 
 c10::intrusive_ptr<ProcessGroup::Work> ProcessGroupNCCL::scatter(
