@@ -128,7 +128,10 @@ TORCH_API
 Tensor empty_generic(
   IntArrayRef size,
   c10::Allocator* allocator,
-  c10::DispatchKey dispatch_key,
+  // technically this can be inferred from the device, but usually the
+  // correct setting is obvious from the call site so just make callers
+  // pass it in
+  c10::DispatchKeySet ks,
   ScalarType dtype,
   c10::optional<c10::MemoryFormat> memory_format
 );
