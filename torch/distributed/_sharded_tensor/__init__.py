@@ -15,6 +15,7 @@ from typing import List
 
 from .api import (
     _register_sharded_op,
+    _PartialTensor,
     CreateOp,
     Shard,
     ShardMetadata,
@@ -538,3 +539,40 @@ def sharded_op_impl(func):
 
 # Import all builtin sharded ops
 from .ops import *  # noqa: F403
+
+def _reshard_output(
+        module: torch.nn.Module,
+        resharding_spec: ShardingSpec) -> torch.nn.Module:
+    """
+    Hook a module with local shards collection in the forward pass according
+    to the given ``resharding_spec``.
+
+    Args:
+        module (:class:`torch.nn.Module`): Module whose output needs to be resharded.
+        resharding_spec (:class:`torch.distributed._sharding_spec.ShardingSpec`): The
+            specification describing how the sharded tensor will be resharded.
+
+    Returns:
+        A :class:`torch.nn.Module` object with collection API hooked.
+    """
+    def hook_func(_module, _input, output):
+        return output.reshard(resharding_spec)
+    module.register_forward_hook(hook_func)
+    return module
+
+
+def _collect_local_shard(module: torch.nn.Module) -> torch.nn.Module:
+    """
+    Hook a module with local shards collection in the forward pass.
+
+    Args:
+        module (:class:`torch.nn.Module`): Module whose output needs to be resharded.
+
+    Returns:
+        A :class:`torch.nn.Module` object with collection API hooked.
+    """
+
+    def hook_func(_module, _input, output):
+        return output.collect_local_shard()
+    module.register_forward_hook(hook_func)
+    return module
