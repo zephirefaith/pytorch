@@ -14467,6 +14467,7 @@ op_db: List[OpInfo] = [
         ref=reference_mse_loss,
         sample_inputs_func=sample_inputs_mse_loss,
         supports_out=False,
+        supports_forward_ad=True,
         dtypes=floating_types_and(torch.float16),
         backward_dtypesIfCPU=floating_types(),
         dtypesIfCUDA=floating_types_and(torch.bfloat16, torch.float16),
@@ -15116,6 +15117,7 @@ op_db: List[OpInfo] = [
         ref=_NOTHING,
         dtypes=floating_types_and(torch.float16, torch.bfloat16),
         supports_out=False,
+        supports_forward_ad=True,
         sample_inputs_func=sample_inputs_huber_loss,
         skips=(
             # JIT does not support variadic tensors.
@@ -15227,6 +15229,7 @@ op_db: List[OpInfo] = [
         backward_dtypesIfCUDA=floating_types_and(torch.float16, torch.int8, torch.int16, torch.int32, torch.int64),
         supports_out=False,
         check_batched_grad=False,
+        supports_forward_ad=True,
         skips=(
             # See https://github.com/pytorch/pytorch/issues/65466
             DecorateInfo(
