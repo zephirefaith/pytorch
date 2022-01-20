@@ -115,10 +115,10 @@ class StoreTestBase(object):
     # This is the number of keys used in test_set_get. Adding this as a class
     # property instead of hardcoding in the test since some Store
     # implementations will have differing number of keys. In the base case,
-    # there will be 5 keys: key, key0, key1, key2, key3.
+    # there will be 6 keys: key, key0, key1, key2, key3, default internal world_size key
     @property
     def num_keys_total(self):
-        return 5
+        return 6
 
 
 class FileStoreTest(TestCase, StoreTestBase):
@@ -215,32 +215,33 @@ class TCPStoreTest(TestCase, StoreTestBase):
 
         rpc.shutdown()
 
-    # The TCPStore has 6 keys in test_set_get. It contains the 5 keys added by
-    # the user and one additional key used for coordinate all the workers.
+    # The TCPStore has 7 keys in test_set_get. It contains the 5 keys added by
+    # the user and one key used for coordinate all the workers and one key for world_size.
     @property
     def num_keys_total(self):
-        return 6
+        return 7
 
     def _test_numkeys_delkeys(self, fs):
-        # We start off with one init key in the store to coordinate workers
-        self.assertEqual(fs.num_keys(), 1)
+        # We start off with two initial keys in the store
+        initial_keys = 2
+        self.assertEqual(fs.num_keys(), initial_keys)
         fs.add("key", 1)
         fs.add("key", 2)
         fs.add("key", 3)
         fs.set("key0", "value0")
         fs.add("key3", 1)
         fs.set("key1", "value1")
-        self.assertEqual(fs.num_keys(), 5)
+        self.assertEqual(fs.num_keys(), initial_keys + 4)
         fs.delete_key("key")
-        self.assertEqual(fs.num_keys(), 4)
+        self.assertEqual(fs.num_keys(), initial_keys + 3)
         fs.set_timeout(timedelta(seconds=2))
         with self.assertRaises(RuntimeError):
             fs.get("key")
         fs.delete_key("key0")
         fs.delete_key("key3")
-        self.assertEqual(fs.num_keys(), 2)
+        self.assertEqual(fs.num_keys(), initial_keys + 1)
         fs.set("key4", "value2")
-        self.assertEqual(fs.num_keys(), 3)
+        self.assertEqual(fs.num_keys(), initial_keys + 2)
         self.assertEqual(b"value1", fs.get("key1"))
         self.assertEqual(b"value2", fs.get("key4"))
 
@@ -280,11 +281,11 @@ class PrefixTCPStoreTest(TestCase, StoreTestBase):
         return dist.PrefixStore(self.prefix, self.tcpstore)
 
     # The PrefixTCPStore has 6 keys in test_set_get. It contains the 5 keys
-    # added by the user and one additional key used for coordinate all the
-    # workers.
+    # added by the user and one key used for coordinate all the workers and
+    # one key for world_size
     @property
     def num_keys_total(self):
-        return 6
+        return 7
 
 
 class MyPythonStore(dist.Store):

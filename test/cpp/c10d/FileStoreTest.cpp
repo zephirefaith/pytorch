@@ -52,7 +52,7 @@ void testGetSet(std::string path, std::string prefix = "") {
     c10d::test::check(store, "key1", "value1");
     c10d::test::check(store, "key2", "value2");
     auto numKeys = fileStore->getNumKeys();
-    EXPECT_EQ(numKeys, 3);
+    EXPECT_EQ(numKeys, 4);
 
     // Check compareSet, does not check return value
     c10d::test::compareSet(store, "key0", "wrongExpectedValue", "newValue");
@@ -85,9 +85,9 @@ void testGetSet(std::string path, std::string prefix = "") {
     c10d::PrefixStore store(prefix, fileStore);
     c10d::test::check(store, "key0", "newValue");
     auto numKeys = fileStore->getNumKeys();
-    // There will be 3 keys since we still use the same underlying file as the
+    // There will be 4 keys since we still use the same underlying file as the
     // other store above.
-    EXPECT_EQ(numKeys, 3);
+    EXPECT_EQ(numKeys, 4);
   }
 }
 

@@ -83,6 +83,8 @@ class TORCH_API TCPStore : public Store {
   // Waits for all workers to join.
   void waitForWorkers();
 
+  int getWorldSize() override;
+
   // Returns the hostname used by the TCPStore.
   const std::string& getHost() const noexcept {
     return addr_.host;
@@ -94,6 +96,7 @@ class TORCH_API TCPStore : public Store {
   }
 
  private:
+  void cleanUp();
   int64_t incrementValueBy(const std::string& key, int64_t delta);
 
   std::vector<uint8_t> doGet(const std::string& key);
