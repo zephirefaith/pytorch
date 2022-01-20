@@ -427,8 +427,7 @@ facebook::jni::local_ref<JIValue> JIValue::newJIValueFromAtIValue(
           "Unknown IValue-Dict key type");
     }
 
-    const auto keyTypeKind = keyType->kind();
-    if (c10::TypeKind::StringType == keyTypeKind) {
+    if (*keyType == *c10::StringType::get()) {
       static auto jMethodDictStringKey =
           JIValue::javaClassStatic()
               ->getStaticMethod<facebook::jni::local_ref<JIValue>(
@@ -447,7 +446,7 @@ facebook::jni::local_ref<JIValue> JIValue::newJIValueFromAtIValue(
             JIValue::newJIValueFromAtIValue(pair.value()));
       }
       return jMethodDictStringKey(JIValue::javaClassStatic(), jmap);
-    } else if (c10::TypeKind::IntType == keyTypeKind) {
+    } else if (*keyType == *c10::IntType::get()) {
       static auto jMethodDictLongKey =
           JIValue::javaClassStatic()
               ->getStaticMethod<facebook::jni::local_ref<JIValue>(
@@ -469,7 +468,8 @@ facebook::jni::local_ref<JIValue> JIValue::newJIValueFromAtIValue(
 
     facebook::jni::throwNewJavaException(
         facebook::jni::gJavaLangIllegalArgumentException,
-        "Unsupported IValue-Dict key type");
+        "Unsupported IValue-Dict key type: %s",
+        keyType->str().c_str());
   }
 
   facebook::jni::throwNewJavaException(
