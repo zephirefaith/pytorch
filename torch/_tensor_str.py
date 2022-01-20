@@ -231,6 +231,9 @@ def _tensor_str_with_formatter(self, indent, summarize, formatter1, formatter2=N
     return '[' + tensor_str + ']'
 
 def _tensor_str(self, indent):
+    if not self.has_storage:
+        return '...'
+
     if self.numel() == 0:
         return '[]'
 
@@ -380,7 +383,7 @@ def _str_intern(inp):
             if self.dtype != torch.get_default_dtype():
                 suffixes.append('dtype=' + str(self.dtype))
             # TODO: This implies that ellipses is valid syntax for allocating
-            # a meta tensor, which it could be, but it isn't right now
+            # a tensor, which it could be, but it isn't right now
             tensor_str = '...'
         else:
             if self.numel() == 0 and not self.is_sparse:
@@ -394,6 +397,9 @@ def _str_intern(inp):
                     suffixes.append('dtype=' + str(self.dtype))
                 tensor_str = '[]'
             else:
+                if not self.has_storage:
+                    suffixes.append('size=' + str(tuple(self.shape)))
+
                 if not has_default_dtype:
                     suffixes.append('dtype=' + str(self.dtype))
 
