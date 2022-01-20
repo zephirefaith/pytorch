@@ -13,6 +13,7 @@ from torch.monitor import (
     log_event,
     register_event_handler,
     unregister_event_handler,
+    Stat,
 )
 
 class TestMonitor(TestCase):
@@ -28,6 +29,7 @@ class TestMonitor(TestCase):
             (Aggregation.SUM, Aggregation.COUNT),
             timedelta(milliseconds=1),
         )
+        self.assertIsInstance(s, Stat)
         s.add(2)
         time.sleep(0.002)
         s.add(3)
@@ -41,6 +43,7 @@ class TestMonitor(TestCase):
             (Aggregation.SUM, Aggregation.COUNT),
             3,
         )
+        self.assertIsInstance(s, Stat)
         s.add(1)
         s.add(2)
         name = s.name
