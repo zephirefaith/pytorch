@@ -169,7 +169,15 @@ core_trainer_sources = [
     "torch/csrc/jit/serialization/type_name_uniquer.cpp",
 ]
 
-core_sources_full_mobile_no_backend_interface = [
+mobile_sources_used_full_jit = [
+    "torch/csrc/jit/mobile/debug_info.cpp",
+    "torch/csrc/jit/mobile/function.cpp",
+    "torch/csrc/jit/mobile/interpreter.cpp",
+    "torch/csrc/jit/mobile/module.cpp",
+    "torch/csrc/jit/mobile/observer.cpp",
+]
+
+core_sources_full_mobile_no_backend_interface = mobile_sources_used_full_jit + [
     "torch/csrc/jit/api/function_impl.cpp",
     "torch/csrc/jit/api/module.cpp",
     "torch/csrc/jit/api/object.cpp",
@@ -209,8 +217,8 @@ core_sources_full_mobile_no_backend_interface = [
     "torch/csrc/jit/mobile/nnc/context.cpp",
     "torch/csrc/jit/mobile/nnc/registry.cpp",
     "torch/csrc/jit/operator_upgraders/utils.cpp",
-    "torch/csrc/jit/operator_upgraders/upgraders_entry.cpp",
     "torch/csrc/jit/operator_upgraders/upgraders.cpp",
+    "torch/csrc/jit/operator_upgraders/upgraders_entry.cpp",
     "torch/csrc/jit/passes/annotate_warns.cpp",
     "torch/csrc/jit/passes/bailout_graph.cpp",
     "torch/csrc/jit/passes/batch_mm.cpp",
@@ -313,6 +321,8 @@ core_sources_full_mobile_no_backend_interface = [
     "torch/csrc/jit/runtime/symbolic_shape_registry_util.cpp",
     "torch/csrc/jit/runtime/jit_trace.cpp",
     "torch/csrc/jit/serialization/callstack_debug_info_serialization.cpp",
+    "torch/csrc/jit/serialization/export_bytecode.cpp",
+    "torch/csrc/jit/serialization/export_module.cpp",
     "torch/csrc/jit/serialization/import.cpp",
     "torch/csrc/jit/serialization/import_export_helpers.cpp",
     "torch/csrc/jit/serialization/import_source.cpp",
@@ -430,6 +440,26 @@ libtorch_core_sources = sorted(
     libtorch_profiler_sources +
     lazy_tensor_core_sources,
 )
+
+def libtorch_core_sources_without_mobile_gen():
+    libtorch_core_sources_without_mobile = []
+    for file_name in libtorch_core_sources:
+        libtorch_core_sources_without_mobile.append(file_name)
+    for file_name in mobile_sources_used_full_jit:
+        libtorch_core_sources_without_mobile.remove(file_name)
+    return libtorch_core_sources_without_mobile
+
+libtorch_core_sources_without_mobile = libtorch_core_sources_without_mobile_gen()
+
+def mobile_interface_without_mobile_files_gen():
+    core_sources_full_mobile_no_backend_interface_without_mobile_files = []
+    for file_name in core_sources_full_mobile_no_backend_interface:
+        core_sources_full_mobile_no_backend_interface_without_mobile_files.append(file_name)
+    for file_name in mobile_sources_used_full_jit:
+        core_sources_full_mobile_no_backend_interface_without_mobile_files.remove(file_name)
+    return core_sources_full_mobile_no_backend_interface_without_mobile_files
+
+core_sources_full_mobile_no_backend_interface_without_mobile_files = mobile_interface_without_mobile_files_gen()
 
 # These files are the only ones that are supported on Windows.
 libtorch_distributed_base_sources = [
@@ -592,8 +622,6 @@ libtorch_extra_sources = libtorch_core_jit_sources + [
     "torch/csrc/jit/mobile/upgrader_mobile.cpp",
     "torch/csrc/jit/serialization/onnx.cpp",
     "torch/csrc/jit/serialization/export.cpp",
-    "torch/csrc/jit/serialization/export_bytecode.cpp",
-    "torch/csrc/jit/serialization/export_module.cpp",
     "torch/csrc/jit/serialization/import_legacy.cpp",
     "torch/csrc/utils/byte_order.cpp",
     "torch/csrc/utils/out_types.cpp",
